@@ -35,10 +35,10 @@ pub fn get_args() -> MyResult<Config> {
                 .long("number")
                 .help("Number all output lines")
                 .takes_value(false)
-                .conflicts_with("number_nonblank"),
+                .conflicts_with("number_nonblank_lines"),
         )
         .arg(
-            Arg::with_name("number_nonblank")
+            Arg::with_name("number_nonblank_lines")
                 .short("b")
                 .long("number-nonblank")
                 .help("Number nonempty output lines")
@@ -65,12 +65,18 @@ pub fn run(config: Config) -> MyResult<()> {
         match open(&filename) {
             Err(e) => eprintln!("Failed to open {}: {}", filename, e),
             Ok(file) => {
-                for line_result in file.lines() {
-                    let mut line_num = 0;
-                    let line = line_result?;
-                    line_num += 1;
+                let mut last_num = 0;
+                for (line_num, line) in file.lines().enumerate() {
+                    let line = line?;
                     if config.number_lines {
-                        println!("{:6} {}", line_num, line);
+                        println!("{:>6}\t{}", line_num + 1, line);
+                    } else if config.number_nonblank_lines  {
+                        if !line.is_empty() {
+                            last_num += 1;
+                            println!("{:>6}\t{}", last_num, line);
+                        } else {
+                            println!();
+                        }
                     } else {
                         println!("{}", line);
                     }
